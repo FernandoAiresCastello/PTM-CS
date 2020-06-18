@@ -1,0 +1,25 @@
+
+WINDOW 480,480,18,20
+
+init:
+	;DEBUG
+	LOG This is a test...
+	
+	TITLE Hello World!
+	MAPR 0, 0, 18, 20
+	LDMAP test01.tgmap
+	
+	POS 0, 2, 10
+	PUT Test1
+	POS 0, 9, 10
+	PUT Test2
+	
+	FIND Test1
+	ANIM 224, 11, 27
+	ANIM 226, 11, 27
+	FIND Test2
+	ANIM 224, 27, 11
+	ANIM 226, 27, 11
+
+end:
+	HALT
