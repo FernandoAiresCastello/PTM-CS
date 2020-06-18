@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Engine\BaseController.cs" />
     <Compile Include="Engine\Bootloader.cs" />
+    <Compile Include="Engine\CommandParams.cs" />
     <Compile Include="Engine\Commands.cs" />
     <Compile Include="Engine\ProgramLine.cs" />
     <Compile Include="Engine\MainClass.cs" />

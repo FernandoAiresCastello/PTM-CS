@@ -10,50 +10,55 @@ namespace PTM.Engine
     {
         private void Init()
         {
-            // Non-executable
+            // Special
             Cmd["NOP"] = Machine.DoNothing;
-            Cmd["WINDOW"] = Machine.DoNothing;
             // Debugging
-            Cmd["DEBUG"] = Machine.ShowDebugger;
-            Cmd["LOG"] = Machine.PrintToDebugger;
-            Cmd["VDUMP"] = Machine.DumpVariables;
-            Cmd["SDUMP"] = Machine.DumpStack;
+            Cmd["DEBUG.SHOW"] = Machine.ShowDebugger;
+            Cmd["DEBUG.PRINT"] = Machine.PrintToDebugger;
+            Cmd["DEBUG.PRINTLN"] = Machine.PrintLineToDebugger;
+            Cmd["DEBUG.VARS.DUMP"] = Machine.DumpVariables;
+            Cmd["DEBUG.STACK.DUMP"] = Machine.DumpStack;
             // System
-            Cmd["HALT"] = Machine.Halt;
-            Cmd["EXIT"] = Machine.Exit;
-            Cmd["TITLE"] = Machine.SetWindowTitle;
-            // Stack, Variables
-            Cmd["PUSH"] = Machine.PushToStack;
-            Cmd["DUP"] = Machine.PushDuplicateToStack;
-            Cmd["STORE"] = Machine.StoreStackToVariable;
-            Cmd["LOAD"] = Machine.LoadVariableToStack;
-            // Arithmetic
-            Cmd["INC"] = Machine.IncrementStackTop;
-            Cmd["DEC"] = Machine.DecrementStackTop;
-            Cmd["ADD"] = Machine.AddTop2ValuesOnStack;
-            Cmd["SUB"] = Machine.SubtractTop2ValuesOnStack;
-            Cmd["MUL"] = Machine.MultiplyTop2ValuesOnStack;
-            Cmd["DIV"] = Machine.DivideTop2ValuesOnStack;
-            Cmd["MOD"] = Machine.DivideTop2ValuesOnStackPushRemainder;
-            // Maps
-            Cmd["LDMAP"] = Machine.LoadMap;
-            Cmd["MAPR"] = Machine.InitMapRenderer;
-            // GameObjects
-            Cmd["POS"] = Machine.SetTargetPosition;
-            Cmd["FIND"] = Machine.FindObjectById;
-            Cmd["PUT"] = Machine.PutObject;
-            Cmd["ANIM"] = Machine.AddObjectAnimation;
+            Cmd["SYS.HALT"] = Machine.Halt;
+            Cmd["SYS.EXIT"] = Machine.Exit;
+            // Window
+            Cmd["WINDOW.INIT"] = Machine.DoNothing;
+            Cmd["WINDOW.TITLE"] = Machine.SetWindowTitle;
+            // Stack
+            Cmd["STK.PUSH"] = Machine.PushToStack;
+            Cmd["STK.DUP"] = Machine.PushDuplicateToStack;
+            Cmd["STK.STORE"] = Machine.StoreStackToVariable;
+            Cmd["STK.LOAD"] = Machine.LoadVariableToStack;
+            // Math
+            Cmd["MATH.INC"] = Machine.IncrementStackTop;
+            Cmd["MATH.DEC"] = Machine.DecrementStackTop;
+            Cmd["MATH.ADD"] = Machine.AddTop2ValuesOnStack;
+            Cmd["MATH.SUB"] = Machine.SubtractTop2ValuesOnStack;
+            Cmd["MATH.MUL"] = Machine.MultiplyTop2ValuesOnStack;
+            Cmd["MATH.DIV"] = Machine.DivideTop2ValuesOnStack;
+            Cmd["MATH.MOD"] = Machine.DivideTop2ValuesOnStackPushRemainder;
+            // Map
+            Cmd["MAP.LOAD"] = Machine.LoadMap;
+            // Map view
+            Cmd["MAPVIEW.INIT"] = Machine.InitMapRenderer;
+            // Game object
+            Cmd["OBJ.POS"] = Machine.SetTargetPosition;
+            Cmd["OBJ.FIND"] = Machine.FindObjectById;
+            Cmd["OBJ.PUT"] = Machine.PutObject;
+            Cmd["OBJ.ANIM.ADD"] = Machine.AddObjectAnimation;
+            Cmd["OBJ.ANIM.SET"] = Machine.SetObjectAnimationFrame;
         }
 
         public ProgramLine CurrentLine { get; private set; }
 
         private readonly Machine Machine;
-        private readonly Dictionary<string, Action<string>> Cmd;
+        private readonly Dictionary<string, Action<CommandParams>> Cmd;
 
         public Commands(Machine machine)
         {
             Machine = machine;
-            Cmd = new Dictionary<string, Action<string>>();
+            CurrentLine = machine.Program.Lines[0];
+            Cmd = new Dictionary<string, Action<CommandParams>>();
             Init();
         }
 
@@ -61,12 +66,11 @@ namespace PTM.Engine
         {
             CurrentLine = line;
             string command = line.Command;
-            string param = line.Params;
 
             if (!Cmd.ContainsKey(command))
                 throw new PTMException($"Unrecognized command: {command}");
 
-            Cmd[command](param);
+            Cmd[command](line.Params);
         }
     }
 }

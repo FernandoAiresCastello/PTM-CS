@@ -16,7 +16,8 @@ namespace PTM.Engine
 {
     public class Machine : GameEngine
     {
-        private readonly Program Program;
+        public Program Program { get; private set; }
+
         private readonly Commands Commands;
         private readonly Stack Stack = new Stack();
         private readonly Variables Vars = new Variables();
@@ -28,16 +29,15 @@ namespace PTM.Engine
         public Machine(Program program)
         {
             Program = program;
-            Commands = new Commands(this);
-
             ProgramLine firstProgramLine = Program.Lines[0];
+            Commands = new Commands(this);
 
             try
             {
-                if (firstProgramLine.Command == "WINDOW")
+                if (firstProgramLine.Command == "WINDOW.INIT")
                     InitWindow(firstProgramLine.Params);
                 else
-                    throw new PTMException("WINDOW expected");
+                    throw new PTMException("WINDOW.INIT expected");
             }
             catch (Exception ex)
             {
@@ -117,72 +117,78 @@ namespace PTM.Engine
         //  COMMAND MAPPING STARTS HERE
         //=====================================================================
 
-        public void DoNothing(string param)
+        public void DoNothing(CommandParams param)
         {
             // Spend 1 cycle doing nothing
         }
 
-        public void InitWindow(string param)
+        public void InitWindow(CommandParams param)
         {
+            if (param.Count != 4)
+                throw new PTMException("Invalid parameter count");
+
             try
             {
-                string[] args = param.Split(',');
-                int width = int.Parse(args[0].Trim());
-                int height = int.Parse(args[1].Trim());
-                int cols = int.Parse(args[2].Trim());
-                int rows = int.Parse(args[3].Trim());
+                int width = param.GetNumber();
+                int height = param.GetNumber();
+                int cols = param.GetNumber();
+                int rows = param.GetNumber();
 
                 Window = new GameWindow(this, "", cols, rows);
                 Window.Size = new Size(width, height);
             }
-            catch
+            catch (Exception ex)
             {
-                throw new PTMException("Invalid WINDOW setup");
+                throw new PTMException("Invalid parameter(s)");
             }
         }
 
-        public void ShowDebugger(string param)
+        public void ShowDebugger(CommandParams param)
         {
             Debugger.Show();
         }
 
-        public void PrintToDebugger(string param)
+        public void PrintToDebugger(CommandParams param)
         {
-            Debugger.Print(param);
+            Debugger.Print(param.GetString());
         }
 
-        public void Halt(string param)
+        public void PrintLineToDebugger(CommandParams param)
+        {
+            Debugger.Println(param.GetString());
+        }
+
+        public void Halt(CommandParams param)
         {
             Stop();
         }
 
-        public void Exit(string param)
+        public void Exit(CommandParams param)
         {
             Exit();
         }
 
-        public void SetWindowTitle(string param)
+        public void SetWindowTitle(CommandParams param)
         {
-            Window.Text = param;
+            Window.Text = param.GetString();
         }
 
-        public void PushToStack(string param)
+        public void PushToStack(CommandParams param)
         {
-            string[] args = param.Split(',');
-            foreach (string arg in args)
-                Stack.Push(arg.Trim());
+            foreach (string value in param.ToList())
+                Stack.Push(value.Trim());
         }
 
-        public void PushDuplicateToStack(string param)
+        public void PushDuplicateToStack(CommandParams param)
         {
             Stack.DuplicateTop();
         }
 
-        public void LoadMap(string param)
+        public void LoadMap(CommandParams param)
         {
             try
             {
-                Map = MapFile.LoadFromRawBytes(param);
+                Map = MapFile.LoadFromRawBytes(param.GetString());
                 Window.Graphics.Tileset = Map.Tileset;
                 Window.Graphics.Palette = Map.Palette;
 
@@ -199,91 +205,90 @@ namespace PTM.Engine
             }
         }
 
-        public void InitMapRenderer(string param)
+        public void InitMapRenderer(CommandParams param)
         {
-            string[] args = param.Split(',');
-            int x = int.Parse(args[0]);
-            int y = int.Parse(args[1]);
-            int cols = int.Parse(args[2]);
-            int rows = int.Parse(args[3]);
+            int x = param.GetNumber();
+            int y = param.GetNumber();
+            int cols = param.GetNumber();
+            int rows = param.GetNumber();
 
             MapRenderer = new MapRenderer(Map, Window.Display, new Rectangle(x, y, cols, rows));
         }
 
-        public void DumpVariables(string param)
+        public void DumpVariables(CommandParams param)
         {
             if (Vars.Count > 0)
             {
-                Debugger.Print("--- Variables ---");
+                Debugger.Println("--- Variables ---");
                 foreach (Variable var in Vars)
                 {
                     string name = var.Name;
                     string value = var.Value != null ? var.Value.ToString() : "<null>";
-                    Debugger.Print($" {name} = {value}");
+                    Debugger.Println($" {name} = {value}");
                 }
             }
             else
             {
-                Debugger.Print("--- Variables empty ---");
+                Debugger.Println("--- Variables empty ---");
             }
         }
 
-        public void DumpStack(string param)
+        public void DumpStack(CommandParams param)
         {
             if (Stack.Count > 0)
             {
-                Debugger.Print("--- Stack ---");
+                Debugger.Println("--- Stack ---");
                 foreach (string value in Stack)
-                    Debugger.Print(" " + value);
+                    Debugger.Println(" " + value);
             }
             else
             {
-                Debugger.Print("--- Stack empty ---");
+                Debugger.Println("--- Stack empty ---");
             }
         }
 
-        public void StoreStackToVariable(string param)
+        public void StoreStackToVariable(CommandParams param)
         {
-            Vars.Set(param, Stack.PopString());
+            Vars.Set(param.GetString(), Stack.PopString());
         }
 
-        public void LoadVariableToStack(string param)
+        public void LoadVariableToStack(CommandParams param)
         {
-            Stack.Push(Vars.GetAsString(param));
+            Stack.Push(Vars.GetAsString(param.GetString()));
         }
 
-        public void IncrementStackTop(string param)
+        public void IncrementStackTop(CommandParams param)
         {
             Stack.Push(Stack.PopNumber() + 1);
         }
 
-        public void DecrementStackTop(string param)
+        public void DecrementStackTop(CommandParams param)
         {
             Stack.Push(Stack.PopNumber() - 1);
         }
 
-        public void AddTop2ValuesOnStack(string param)
+        public void AddTop2ValuesOnStack(CommandParams param)
         {
             int a = Stack.PopNumber();
             int b = Stack.PopNumber();
             Stack.Push(a + b);
         }
 
-        public void SubtractTop2ValuesOnStack(string param)
+        public void SubtractTop2ValuesOnStack(CommandParams param)
         {
             int a = Stack.PopNumber();
             int b = Stack.PopNumber();
             Stack.Push(b - a);
         }
 
-        public void MultiplyTop2ValuesOnStack(string param)
+        public void MultiplyTop2ValuesOnStack(CommandParams param)
         {
             int a = Stack.PopNumber();
             int b = Stack.PopNumber();
             Stack.Push(a * b);
         }
 
-        public void DivideTop2ValuesOnStack(string param)
+        public void DivideTop2ValuesOnStack(CommandParams param)
         {
             int divisor = Stack.PopNumber();
             if (divisor == 0)
@@ -294,7 +299,7 @@ namespace PTM.Engine
             Stack.Push(dividend / divisor);
         }
 
-        public void DivideTop2ValuesOnStackPushRemainder(string param)
+        public void DivideTop2ValuesOnStackPushRemainder(CommandParams param)
         {
             int divisor = Stack.PopNumber();
             if (divisor == 0)
@@ -305,48 +310,63 @@ namespace PTM.Engine
             Stack.Push(remainder);
         }
 
-        public void SetTargetPosition(string param)
+        private void AssertTargetPosition()
         {
-            string[] args = param.Split(',');
-            int layer = int.Parse(args[0].Trim());
-            int x = int.Parse(args[1].Trim());
-            int y = int.Parse(args[2].Trim());
+            if (Target == null)
+                throw new PTMException("Target position is null");
+        }
+
+        public void SetTargetPosition(CommandParams param)
+        {
+            int layer = param.GetNumber();
+            int x = param.GetNumber();
+            int y = param.GetNumber();
 
             Target = new ObjectPosition(layer, x, y);
         }
 
-        public void FindObjectById(string param)
+        public void PutObject(CommandParams param)
         {
-            PositionedObject po = Map.FindObjectById(param);
+            AssertTargetPosition();
+
+            GameObject o = new GameObject(new Tile());
+            o.Id = param.GetString();
+            o.Animation.Clear();
+            Map.PutObject(o, Target);
+        }
+
+        public void FindObjectById(CommandParams param)
+        {
+            PositionedObject po = Map.FindObjectById(param.GetString());
             if (po == null)
                 throw new PTMException("Object not found with id: " + param);
 
             Target = po.Position;
         }
 
-        public void AddObjectAnimation(string param)
+        public void AddObjectAnimation(CommandParams param)
         {
-            if (Target == null)
-                throw new PTMException("Target position is null");
+            AssertTargetPosition();
 
-            string[] args = param.Split(',');
-            int tileIx = int.Parse(args[0].Trim());
-            int tileFgc = int.Parse(args[1].Trim());
-            int tileBgc = int.Parse(args[2].Trim());
+            int tileIx = param.GetNumber();
+            int tileFgc = param.GetNumber();
+            int tileBgc = param.GetNumber();
 
             GameObject o = Map.GetObject(Target);
             o.Animation.AddFrame(new Tile(tileIx, tileFgc, tileBgc));
         }
 
-        public void PutObject(string param)
+        public void SetObjectAnimationFrame(CommandParams param)
         {
-            if (Target == null)
-                throw new PTMException("Target position is null");
+            AssertTargetPosition();
 
-            GameObject o = new GameObject(new Tile());
-            o.Id = param;
-            o.Animation.Clear();
-            Map.PutObject(o, Target);
+            int frame = param.GetNumber();
+            int tileIx = param.GetNumber();
+            int tileFgc = param.GetNumber();
+            int tileBgc = param.GetNumber();
+
+            GameObject o = Map.GetObject(Target);
+            o.Animation.SetFrame(frame, new Tile(tileIx, tileFgc, tileBgc));
         }
     }
 }

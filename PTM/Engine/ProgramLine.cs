@@ -11,9 +11,9 @@ namespace PTM.Engine
         public int SourceLineNumber { set; get; }
         public int ActualLineNumber { set; get; }
         public string Command { set; get; }
-        public string Params { set; get; }
+        public CommandParams Params { set; get; }
 
-        public ProgramLine(int sourceLineNumber, int actualLineNumber, string command, string param)
+        public ProgramLine(int sourceLineNumber, int actualLineNumber, string command, CommandParams param)
         {
             SourceLineNumber = sourceLineNumber;
             ActualLineNumber = actualLineNumber;
