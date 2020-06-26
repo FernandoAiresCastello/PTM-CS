@@ -15,7 +15,6 @@ namespace PTM.Engine
             // Debugging
             Cmd["DEBUG.SHOW"] = Machine.ShowDebugger;
             Cmd["DEBUG.PRINT"] = Machine.PrintToDebugger;
-            Cmd["DEBUG.PRINTLN"] = Machine.PrintLineToDebugger;
             Cmd["DEBUG.VARS.DUMP"] = Machine.DumpVariables;
             Cmd["DEBUG.STACK.DUMP"] = Machine.DumpStack;
             // System
@@ -47,6 +46,8 @@ namespace PTM.Engine
             Cmd["OBJ.PUT"] = Machine.PutObject;
             Cmd["OBJ.ANIM.ADD"] = Machine.AddObjectAnimation;
             Cmd["OBJ.ANIM.SET"] = Machine.SetObjectAnimationFrame;
+            Cmd["OBJ.MOVE.DIST"] = Machine.MoveObjectByDistance;
+            Cmd["OBJ.MOVE.TO"] = Machine.MoveObjectTo;
         }
 
         public ProgramLine CurrentLine { get; private set; }

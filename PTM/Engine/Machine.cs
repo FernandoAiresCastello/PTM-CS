@@ -153,11 +153,6 @@ namespace PTM.Engine
             Debugger.Print(param.GetString());
         }
 
-        public void PrintLineToDebugger(CommandParams param)
-        {
-            Debugger.Println(param.GetString());
-        }
-
         public void Halt(CommandParams param)
         {
             Stop();
@@ -219,17 +214,17 @@ namespace PTM.Engine
         {
             if (Vars.Count > 0)
             {
-                Debugger.Println("--- Variables ---");
+                Debugger.Print("--- Variables ---");
                 foreach (Variable var in Vars)
                 {
                     string name = var.Name;
                     string value = var.Value != null ? var.Value.ToString() : "<null>";
-                    Debugger.Println($" {name} = {value}");
+                    Debugger.Print($" {name} = {value}");
                 }
             }
             else
             {
-                Debugger.Println("--- Variables empty ---");
+                Debugger.Print("--- Variables empty ---");
             }
         }
 
@@ -237,13 +232,13 @@ namespace PTM.Engine
         {
             if (Stack.Count > 0)
             {
-                Debugger.Println("--- Stack ---");
+                Debugger.Print("--- Stack ---");
                 foreach (string value in Stack)
-                    Debugger.Println(" " + value);
+                    Debugger.Print(" " + value);
             }
             else
             {
-                Debugger.Println("--- Stack empty ---");
+                Debugger.Print("--- Stack empty ---");
             }
         }
 
@@ -367,6 +362,32 @@ namespace PTM.Engine
 
             GameObject o = Map.GetObject(Target);
             o.Animation.SetFrame(frame, new Tile(tileIx, tileFgc, tileBgc));
+        }
+
+        public void MoveObjectByDistance(CommandParams param)
+        {
+            AssertTargetPosition();
+
+            int distLayer = param.GetNumber();
+            int distX = param.GetNumber();
+            int distY = param.GetNumber();
+            ObjectPosition newPosition = new ObjectPosition(Target);
+            newPosition.MoveDistance(distX, distY);
+            newPosition.AtLayer(newPosition.Layer + distLayer);
+
+            Map.MoveObject(Target, newPosition);
+        }
+
+        public void MoveObjectTo(CommandParams param)
+        {
+            AssertTargetPosition();
+
+            int layer = param.GetNumber();
+            int x = param.GetNumber();
+            int y = param.GetNumber();
+            ObjectPosition newPosition = new ObjectPosition(layer, x, y);
+
+            Map.MoveObject(Target, newPosition);
         }
     }
 }
