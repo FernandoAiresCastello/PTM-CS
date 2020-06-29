@@ -25,6 +25,8 @@ namespace PTM.Engine
         private int ProgramPtr = 0;
         private ObjectMap Map;
         private ObjectPosition Target;
+        private ProgramLabel KeyDownHandlerLabel;
+        private ProgramLabel KeyUpHandlerLabel;
 
         public Machine(Program program)
         {
@@ -63,25 +65,28 @@ namespace PTM.Engine
 
         public override void OnStart()
         {
-            // Nothing to do here yet
+            ExecuteProgram();
         }
 
-        public override void OnExecuteCycle()
+        private void ExecuteProgram()
         {
             try
             {
-                if (ProgramPtr >= Program.Lines.Count)
-                    throw new PTMException("Program pointer past end of program");
-
-                ProgramLine line = Program.Lines[ProgramPtr];
-
-                if (IsExecutable(line))
+                while (Running)
                 {
-                    Commands.Execute(line);
-                    Cycle++;
-                }
+                    if (ProgramPtr >= Program.Lines.Count)
+                        throw new PTMException("Program pointer past end of program");
 
-                ProgramPtr++;
+                    ProgramLine line = Program.Lines[ProgramPtr];
+
+                    if (IsExecutable(line))
+                    {
+                        Commands.Execute(line);
+                        Cycle++;
+                    }
+
+                    ProgramPtr++;
+                }
             }
             catch (PTMException ptmex)
             {
@@ -93,6 +98,11 @@ namespace PTM.Engine
                 Error(ex.Message);
                 throw new PTMException(ex.Message);
             }
+        }
+
+        public override void OnExecuteCycle()
+        {
+            // Nothing to do here
         }
 
         private bool IsExecutable(ProgramLine line)
@@ -388,6 +398,22 @@ namespace PTM.Engine
             ObjectPosition newPosition = new ObjectPosition(layer, x, y);
 
             Map.MoveObject(Target, newPosition);
+        }
+
+        public void SetKeyDownHandler(CommandParams param)
+        {
+            string label = param.GetString();
+            KeyDownHandlerLabel = Program.GetLabel(label);
+            if (KeyDownHandlerLabel == null)
+                throw new PTMException("Undefined label");
+        }
+
+        public void SetKeyUpHandler(CommandParams param)
+        {
+            string label = param.GetString();
+            KeyUpHandlerLabel = Program.GetLabel(label);
+            if (KeyUpHandlerLabel == null)
+                throw new PTMException("Undefined label");
         }
     }
 }

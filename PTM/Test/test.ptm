@@ -1,11 +1,11 @@
 
-WINDOW.INIT 480,480,18,20
+WINDOW.INIT 480,480,23,22
 
 init:
 	;DEBUG.SHOW
 	
 	WINDOW.TITLE Hello World!
-	MAPVIEW.INIT 0, 0, 18, 20
+	MAPVIEW.INIT 0, 0, 23, 22
 	MAP.LOAD test01.tgmap
 	
 	OBJ.POS 0, 2, 10
@@ -25,5 +25,10 @@ init:
 	OBJ.POS 0, 0, 10
 	OBJ.MOVE.TO 0, 10, 10
 
+	KEY.DOWN.CALL key_down
+
 end:
 	SYS.HALT
+
+key_down:
+	RET

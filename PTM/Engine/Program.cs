@@ -82,6 +82,17 @@ namespace PTM.Engine
             }
         }
 
+        public ProgramLabel GetLabel(string labelText)
+        {
+            foreach (ProgramLabel label in Labels)
+            {
+                if (label.Label == labelText.Trim())
+                    return label;
+            }
+
+            return null;
+        }
+
         public bool IsLabel(string line)
         {
             return line.EndsWith(":");

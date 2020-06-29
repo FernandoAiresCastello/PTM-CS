@@ -48,6 +48,9 @@ namespace PTM.Engine
             Cmd["OBJ.ANIM.SET"] = Machine.SetObjectAnimationFrame;
             Cmd["OBJ.MOVE.DIST"] = Machine.MoveObjectByDistance;
             Cmd["OBJ.MOVE.TO"] = Machine.MoveObjectTo;
+            // Keyboard
+            Cmd["KEY.DOWN.CALL"] = Machine.SetKeyDownHandler;
+            Cmd["KEY.UP.CALL"] = Machine.SetKeyUpHandler;
         }
 
         public ProgramLine CurrentLine { get; private set; }
