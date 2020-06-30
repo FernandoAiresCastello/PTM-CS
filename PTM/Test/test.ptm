@@ -1,18 +1,37 @@
 
-WINDOW.INIT 480,480,23,22
+WINDOW.INIT Hello World!,480,480,23,22
 
-init:
-	;DEBUG.SHOW
+start:
+	DEBUG.SHOW
+	DEBUG.PRINT Program start
 	
-	WINDOW.TITLE Hello World!
+	KEY.DOWN.CALL key_down
+
+	CALL setup_map
+	CALL put_test_objs
+	CALL animate_test_objs
+	CALL move_test_objs
+
+infinite_loop:
+	DEBUG.CYCLE
+	GOTO infinite_loop
+
+end:
+	SYS.HALT
+
+setup_map:
 	MAPVIEW.INIT 0, 0, 23, 22
 	MAP.LOAD test01.tgmap
-	
+	RET
+
+put_test_objs:
 	OBJ.POS 0, 2, 10
 	OBJ.PUT Test1
 	OBJ.POS 0, 9, 10
 	OBJ.PUT Test2
-	
+	RET
+
+animate_test_objs:
 	OBJ.FIND Test1
 	OBJ.ANIM.ADD 224, 11, 27
 	OBJ.ANIM.ADD 226, 11, 27
@@ -20,15 +39,14 @@ init:
 	OBJ.ANIM.ADD 224, 27, 11
 	OBJ.ANIM.ADD 226, 27, 11
 	OBJ.ANIM.SET 0, 1, 17, 37
+	RET
+
+move_test_objs:
 	OBJ.POS 0, 0, 4
 	OBJ.MOVE.DIST 0, 1, 1
 	OBJ.POS 0, 0, 10
 	OBJ.MOVE.TO 0, 10, 10
-
-	KEY.DOWN.CALL key_down
-
-end:
-	SYS.HALT
+	RET
 
 key_down:
 	RET

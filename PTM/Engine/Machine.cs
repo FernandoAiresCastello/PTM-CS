@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TileGameLib.Engine;
@@ -19,14 +20,15 @@ namespace PTM.Engine
         public Program Program { get; private set; }
 
         private readonly Commands Commands;
-        private readonly Stack Stack = new Stack();
+        private readonly Stack ExprStack = new Stack();
+        private readonly Stack CallStack = new Stack();
         private readonly Variables Vars = new Variables();
         private long Cycle = 0;
         private int ProgramPtr = 0;
         private ObjectMap Map;
-        private ObjectPosition Target;
-        private ProgramLabel KeyDownHandlerLabel;
-        private ProgramLabel KeyUpHandlerLabel;
+        private ObjectPosition TargetObject;
+        private int KeyDownHandlerLabel;
+        private int KeyUpHandlerLabel;
 
         public Machine(Program program)
         {
@@ -65,7 +67,7 @@ namespace PTM.Engine
 
         public override void OnStart()
         {
-            ExecuteProgram();
+            new Thread(ExecuteProgram).Start();
         }
 
         private void ExecuteProgram()
@@ -134,11 +136,12 @@ namespace PTM.Engine
 
         public void InitWindow(CommandParams param)
         {
-            if (param.Count != 4)
+            if (param.Count != 5)
                 throw new PTMException("Invalid parameter count");
 
             try
             {
+                string title = param.GetString();
                 int width = param.GetNumber();
                 int height = param.GetNumber();
                 int cols = param.GetNumber();
@@ -146,6 +149,7 @@ namespace PTM.Engine
 
                 Window = new GameWindow(this, "", cols, rows);
                 Window.Size = new Size(width, height);
+                Window.Text = title;
             }
             catch (Exception ex)
             {
@@ -160,11 +164,12 @@ namespace PTM.Engine
 
         public void PrintToDebugger(CommandParams param)
         {
-            Debugger.Print(param.GetString());
+            Debugger.Println(param.GetString());
         }
 
         public void Halt(CommandParams param)
         {
+            Debugger.Println("System halted");
             Stop();
         }
 
@@ -181,12 +186,12 @@ namespace PTM.Engine
         public void PushToStack(CommandParams param)
         {
             foreach (string value in param.ToList())
-                Stack.Push(value.Trim());
+                ExprStack.Push(value.Trim());
         }
 
         public void PushDuplicateToStack(CommandParams param)
         {
-            Stack.DuplicateTop();
+            ExprStack.DuplicateTop();
         }
 
         public void LoadMap(CommandParams param)
@@ -224,101 +229,114 @@ namespace PTM.Engine
         {
             if (Vars.Count > 0)
             {
-                Debugger.Print("--- Variables ---");
+                Debugger.Println("--- Variables ---");
                 foreach (Variable var in Vars)
                 {
                     string name = var.Name;
                     string value = var.Value != null ? var.Value.ToString() : "<null>";
-                    Debugger.Print($" {name} = {value}");
+                    Debugger.Println($" {name} = {value}");
                 }
             }
             else
             {
-                Debugger.Print("--- Variables empty ---");
+                Debugger.Println("--- Variables empty ---");
             }
         }
 
-        public void DumpStack(CommandParams param)
+        public void DumpExprStack(CommandParams param)
         {
-            if (Stack.Count > 0)
+            if (ExprStack.Count > 0)
             {
-                Debugger.Print("--- Stack ---");
-                foreach (string value in Stack)
-                    Debugger.Print(" " + value);
+                Debugger.Println("--- Stack ---");
+                foreach (string value in ExprStack)
+                    Debugger.Println(" " + value);
             }
             else
             {
-                Debugger.Print("--- Stack empty ---");
+                Debugger.Println("--- Stack empty ---");
             }
+        }
+
+        public void DumpCurrentCycle(CommandParams param)
+        {
+            Debugger.Println(Cycle);
         }
 
         public void StoreStackToVariable(CommandParams param)
         {
-            Vars.Set(param.GetString(), Stack.PopString());
+            Vars.Set(param.GetString(), ExprStack.PopString());
         }
 
         public void LoadVariableToStack(CommandParams param)
         {
-            Stack.Push(Vars.GetAsString(param.GetString()));
+            ExprStack.Push(Vars.GetAsString(param.GetString()));
         }
 
         public void IncrementStackTop(CommandParams param)
         {
-            Stack.Push(Stack.PopNumber() + 1);
+            ExprStack.Push(ExprStack.PopNumber() + 1);
         }
 
         public void DecrementStackTop(CommandParams param)
         {
-            Stack.Push(Stack.PopNumber() - 1);
+            ExprStack.Push(ExprStack.PopNumber() - 1);
         }
 
         public void AddTop2ValuesOnStack(CommandParams param)
         {
-            int a = Stack.PopNumber();
-            int b = Stack.PopNumber();
-            Stack.Push(a + b);
+            int a = ExprStack.PopNumber();
+            int b = ExprStack.PopNumber();
+            ExprStack.Push(a + b);
         }
 
         public void SubtractTop2ValuesOnStack(CommandParams param)
         {
-            int a = Stack.PopNumber();
-            int b = Stack.PopNumber();
-            Stack.Push(b - a);
+            int a = ExprStack.PopNumber();
+            int b = ExprStack.PopNumber();
+            ExprStack.Push(b - a);
         }
 
         public void MultiplyTop2ValuesOnStack(CommandParams param)
         {
-            int a = Stack.PopNumber();
-            int b = Stack.PopNumber();
-            Stack.Push(a * b);
+            int a = ExprStack.PopNumber();
+            int b = ExprStack.PopNumber();
+            ExprStack.Push(a * b);
         }
 
         public void DivideTop2ValuesOnStack(CommandParams param)
         {
-            int divisor = Stack.PopNumber();
+            int divisor = ExprStack.PopNumber();
             if (divisor == 0)
                 throw new PTMException("Division by zero");
 
-            int dividend = Stack.PopNumber();
+            int dividend = ExprStack.PopNumber();
 
-            Stack.Push(dividend / divisor);
+            ExprStack.Push(dividend / divisor);
         }
 
         public void DivideTop2ValuesOnStackPushRemainder(CommandParams param)
         {
-            int divisor = Stack.PopNumber();
+            int divisor = ExprStack.PopNumber();
             if (divisor == 0)
                 throw new PTMException("Division by zero");
 
-            int dividend = Stack.PopNumber();
+            int dividend = ExprStack.PopNumber();
             Math.DivRem(dividend, divisor, out int remainder);
-            Stack.Push(remainder);
+            ExprStack.Push(remainder);
         }
 
         private void AssertTargetPosition()
         {
-            if (Target == null)
+            if (TargetObject == null)
                 throw new PTMException("Target position is null");
+        }
+
+        private int TryGetLabelLineNumber(string label)
+        {
+            if (Program.GetLabel(label) == null)
+                throw new PTMException("Undefined label");
+
+            return Program.GetLabel(label).LineNumber;
         }
 
         public void SetTargetPosition(CommandParams param)
@@ -327,7 +345,7 @@ namespace PTM.Engine
             int x = param.GetNumber();
             int y = param.GetNumber();
 
-            Target = new ObjectPosition(layer, x, y);
+            TargetObject = new ObjectPosition(layer, x, y);
         }
 
         public void PutObject(CommandParams param)
@@ -337,7 +355,7 @@ namespace PTM.Engine
             GameObject o = new GameObject(new Tile());
             o.Id = param.GetString();
             o.Animation.Clear();
-            Map.PutObject(o, Target);
+            Map.PutObject(o, TargetObject);
         }
 
         public void FindObjectById(CommandParams param)
@@ -346,7 +364,7 @@ namespace PTM.Engine
             if (po == null)
                 throw new PTMException("Object not found with id: " + param);
 
-            Target = po.Position;
+            TargetObject = po.Position;
         }
 
         public void AddObjectAnimation(CommandParams param)
@@ -357,7 +375,7 @@ namespace PTM.Engine
             int tileFgc = param.GetNumber();
             int tileBgc = param.GetNumber();
 
-            GameObject o = Map.GetObject(Target);
+            GameObject o = Map.GetObject(TargetObject);
             o.Animation.AddFrame(new Tile(tileIx, tileFgc, tileBgc));
         }
 
@@ -370,7 +388,7 @@ namespace PTM.Engine
             int tileFgc = param.GetNumber();
             int tileBgc = param.GetNumber();
 
-            GameObject o = Map.GetObject(Target);
+            GameObject o = Map.GetObject(TargetObject);
             o.Animation.SetFrame(frame, new Tile(tileIx, tileFgc, tileBgc));
         }
 
@@ -381,11 +399,11 @@ namespace PTM.Engine
             int distLayer = param.GetNumber();
             int distX = param.GetNumber();
             int distY = param.GetNumber();
-            ObjectPosition newPosition = new ObjectPosition(Target);
+            ObjectPosition newPosition = new ObjectPosition(TargetObject);
             newPosition.MoveDistance(distX, distY);
             newPosition.AtLayer(newPosition.Layer + distLayer);
 
-            Map.MoveObject(Target, newPosition);
+            Map.MoveObject(TargetObject, newPosition);
         }
 
         public void MoveObjectTo(CommandParams param)
@@ -397,23 +415,33 @@ namespace PTM.Engine
             int y = param.GetNumber();
             ObjectPosition newPosition = new ObjectPosition(layer, x, y);
 
-            Map.MoveObject(Target, newPosition);
+            Map.MoveObject(TargetObject, newPosition);
         }
 
         public void SetKeyDownHandler(CommandParams param)
         {
-            string label = param.GetString();
-            KeyDownHandlerLabel = Program.GetLabel(label);
-            if (KeyDownHandlerLabel == null)
-                throw new PTMException("Undefined label");
+            KeyDownHandlerLabel = TryGetLabelLineNumber(param.GetString());
         }
 
         public void SetKeyUpHandler(CommandParams param)
         {
-            string label = param.GetString();
-            KeyUpHandlerLabel = Program.GetLabel(label);
-            if (KeyUpHandlerLabel == null)
-                throw new PTMException("Undefined label");
+            KeyUpHandlerLabel = TryGetLabelLineNumber(param.GetString());
+        }
+
+        public void CallSubroutineAtLabel(CommandParams param)
+        {
+            CallStack.Push(ProgramPtr);
+            ProgramPtr = TryGetLabelLineNumber(param.GetString());
+        }
+
+        public void ReturnFromSubroutine(CommandParams param)
+        {
+            ProgramPtr = CallStack.PopNumber();
+        }
+
+        public void GoToLabel(CommandParams param)
+        {
+            ProgramPtr = TryGetLabelLineNumber(param.GetString());
         }
     }
 }

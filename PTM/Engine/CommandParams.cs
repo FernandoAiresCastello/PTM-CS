@@ -24,6 +24,11 @@ namespace PTM.Engine
                 Params.AddRange(paramList.Split(','));
         }
 
+        public CommandParams(CommandParams other)
+        {
+            Params.AddRange(other.Params);
+        }
+
         public override string ToString()
         {
             StringBuilder paramString = new StringBuilder();

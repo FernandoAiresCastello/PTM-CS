@@ -84,9 +84,11 @@ namespace PTM.Engine
 
         public ProgramLabel GetLabel(string labelText)
         {
+            labelText = labelText + ":";
+
             foreach (ProgramLabel label in Labels)
             {
-                if (label.Label == labelText.Trim())
+                if (label.Label == labelText.ToUpper().Trim())
                     return label;
             }
 

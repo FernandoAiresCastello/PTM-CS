@@ -13,7 +13,7 @@ namespace PTM.Engine
 
         public ProgramLabel(string label, int number)
         {
-            Label = label;
+            Label = label.ToUpper();
             LineNumber = number;
         }
 

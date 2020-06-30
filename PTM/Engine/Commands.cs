@@ -16,18 +16,22 @@ namespace PTM.Engine
             Cmd["DEBUG.SHOW"] = Machine.ShowDebugger;
             Cmd["DEBUG.PRINT"] = Machine.PrintToDebugger;
             Cmd["DEBUG.VARS.DUMP"] = Machine.DumpVariables;
-            Cmd["DEBUG.STACK.DUMP"] = Machine.DumpStack;
+            Cmd["DEBUG.STK.DUMP"] = Machine.DumpExprStack;
+            Cmd["DEBUG.CYCLE"] = Machine.DumpCurrentCycle;
             // System
             Cmd["SYS.HALT"] = Machine.Halt;
             Cmd["SYS.EXIT"] = Machine.Exit;
             // Window
             Cmd["WINDOW.INIT"] = Machine.DoNothing;
-            Cmd["WINDOW.TITLE"] = Machine.SetWindowTitle;
-            // Stack
+            // Expression stack
             Cmd["STK.PUSH"] = Machine.PushToStack;
             Cmd["STK.DUP"] = Machine.PushDuplicateToStack;
             Cmd["STK.STORE"] = Machine.StoreStackToVariable;
             Cmd["STK.LOAD"] = Machine.LoadVariableToStack;
+            // Program branching
+            Cmd["CALL"] = Machine.CallSubroutineAtLabel;
+            Cmd["RET"] = Machine.ReturnFromSubroutine;
+            Cmd["GOTO"] = Machine.GoToLabel;
             // Math
             Cmd["MATH.INC"] = Machine.IncrementStackTop;
             Cmd["MATH.DEC"] = Machine.DecrementStackTop;
@@ -74,7 +78,7 @@ namespace PTM.Engine
             if (!Cmd.ContainsKey(command))
                 throw new PTMException($"Unrecognized command: {command}");
 
-            Cmd[command](line.Params);
+            Cmd[command](new CommandParams(line.Params));
         }
     }
 }
