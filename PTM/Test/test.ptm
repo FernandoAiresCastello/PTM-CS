@@ -4,6 +4,10 @@ WINDOW.INIT Hello World!,480,480,23,22
 start:
 	DEBUG.SHOW
 	DEBUG.PRINT Program start
+	VAR $test, 5
+	VAR $test2, $test
+	DEBUG.PRINT $test
+	DEBUG.PRINT $test2
 	
 	KEY.DOWN.CALL key_down
 
@@ -13,7 +17,7 @@ start:
 	CALL move_test_objs
 
 infinite_loop:
-	DEBUG.CYCLE
+	;DEBUG.CYCLE
 	GOTO infinite_loop
 
 end:
@@ -46,7 +50,4 @@ move_test_objs:
 	OBJ.MOVE.DIST 0, 1, 1
 	OBJ.POS 0, 0, 10
 	OBJ.MOVE.TO 0, 10, 10
-	RET
-
-key_down:
 	RET

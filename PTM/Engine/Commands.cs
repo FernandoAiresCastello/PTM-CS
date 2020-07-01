@@ -32,6 +32,8 @@ namespace PTM.Engine
             Cmd["CALL"] = Machine.CallSubroutineAtLabel;
             Cmd["RET"] = Machine.ReturnFromSubroutine;
             Cmd["GOTO"] = Machine.GoToLabel;
+            // Variables
+            Cmd["VAR"] = Machine.SetVariable;
             // Math
             Cmd["MATH.INC"] = Machine.IncrementStackTop;
             Cmd["MATH.DEC"] = Machine.DecrementStackTop;
@@ -61,12 +63,14 @@ namespace PTM.Engine
 
         private readonly Machine Machine;
         private readonly Dictionary<string, Action<CommandParams>> Cmd;
+        private readonly Variables Vars;
 
         public Commands(Machine machine)
         {
             Machine = machine;
             CurrentLine = machine.Program.Lines[0];
             Cmd = new Dictionary<string, Action<CommandParams>>();
+            Vars = machine.Vars;
             Init();
         }
 
@@ -78,7 +82,7 @@ namespace PTM.Engine
             if (!Cmd.ContainsKey(command))
                 throw new PTMException($"Unrecognized command: {command}");
 
-            Cmd[command](new CommandParams(line.Params));
+            Cmd[command](new CommandParams(Vars, line.Params));
         }
     }
 }

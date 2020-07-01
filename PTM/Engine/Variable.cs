@@ -16,5 +16,10 @@ namespace PTM.Engine
             Name = name.Trim().ToUpper();
             Value = value;
         }
+
+        public override string ToString()
+        {
+            return Name + " = " + Value;
+        }
     }
 }

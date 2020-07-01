@@ -13,19 +13,22 @@ namespace PTM.Engine
 
         private readonly List<string> Params = new List<string>();
         private int CurrentIndex = 0;
+        private readonly Variables Vars;
 
         private CommandParams()
         {
         }
 
-        public CommandParams(string paramList)
+        public CommandParams(Variables vars, string paramList)
         {
+            Vars = vars;
             if (paramList != null)
                 Params.AddRange(paramList.Split(','));
         }
 
-        public CommandParams(CommandParams other)
+        public CommandParams(Variables vars, CommandParams other)
         {
+            Vars = vars;
             Params.AddRange(other.Params);
         }
 
@@ -39,17 +42,30 @@ namespace PTM.Engine
             return paramString.ToString();
         }
 
+        public int GetNumber()
+        {
+            return int.Parse(GetString());
+        }
+
         public string GetString()
         {
             if (CurrentIndex >= Count)
                 throw new PTMException("Invalid parameter count");
 
-            return Params[CurrentIndex++];
+            string param = Params[CurrentIndex++];
+
+            if (param.Trim().StartsWith("$"))
+                return Vars.GetAsString(param);
+
+            return param;
         }
 
-        public int GetNumber()
+        public string GetStringDirect()
         {
-            return int.Parse(GetString());
+            if (CurrentIndex >= Count)
+                throw new PTMException("Invalid parameter count");
+
+            return Params[CurrentIndex++];
         }
     }
 }

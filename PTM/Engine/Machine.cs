@@ -22,13 +22,13 @@ namespace PTM.Engine
         private readonly Commands Commands;
         private readonly Stack ExprStack = new Stack();
         private readonly Stack CallStack = new Stack();
-        private readonly Variables Vars = new Variables();
+        public Variables Vars { get; private set; } = new Variables();
         private long Cycle = 0;
         private int ProgramPtr = 0;
         private ObjectMap Map;
         private ObjectPosition TargetObject;
-        private int KeyDownHandlerLabel;
-        private int KeyUpHandlerLabel;
+        private string KeyDownHandlerLabel;
+        private string KeyUpHandlerLabel;
 
         public Machine(Program program)
         {
@@ -65,30 +65,22 @@ namespace PTM.Engine
             MessageBox.Show(msg, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        public override void OnStart()
-        {
-            new Thread(ExecuteProgram).Start();
-        }
-
-        private void ExecuteProgram()
+        public override void OnExecuteCycle()
         {
             try
             {
-                while (Running)
+                if (ProgramPtr >= Program.Lines.Count)
+                    throw new PTMException("Program pointer past end of program");
+
+                ProgramLine line = Program.Lines[ProgramPtr];
+
+                if (IsExecutable(line))
                 {
-                    if (ProgramPtr >= Program.Lines.Count)
-                        throw new PTMException("Program pointer past end of program");
-
-                    ProgramLine line = Program.Lines[ProgramPtr];
-
-                    if (IsExecutable(line))
-                    {
-                        Commands.Execute(line);
-                        Cycle++;
-                    }
-
-                    ProgramPtr++;
+                    Commands.Execute(line);
+                    Cycle++;
                 }
+
+                ProgramPtr++;
             }
             catch (PTMException ptmex)
             {
@@ -100,11 +92,6 @@ namespace PTM.Engine
                 Error(ex.Message);
                 throw new PTMException(ex.Message);
             }
-        }
-
-        public override void OnExecuteCycle()
-        {
-            // Nothing to do here
         }
 
         private bool IsExecutable(ProgramLine line)
@@ -178,9 +165,15 @@ namespace PTM.Engine
             Exit();
         }
 
-        public void SetWindowTitle(CommandParams param)
+        public void SetVariable(CommandParams param)
         {
-            Window.Text = param.GetString();
+            string name = param.GetStringDirect().Trim();
+            string value = param.GetString().Trim();
+
+            if (!name.StartsWith("$"))
+                throw new PTMException("Invalid variable name");
+
+            Vars.Set(name, value);
         }
 
         public void PushToStack(CommandParams param)
@@ -420,12 +413,12 @@ namespace PTM.Engine
 
         public void SetKeyDownHandler(CommandParams param)
         {
-            KeyDownHandlerLabel = TryGetLabelLineNumber(param.GetString());
+            KeyDownHandlerLabel = param.GetString();
         }
 
         public void SetKeyUpHandler(CommandParams param)
         {
-            KeyUpHandlerLabel = TryGetLabelLineNumber(param.GetString());
+            KeyUpHandlerLabel = param.GetString();
         }
 
         public void CallSubroutineAtLabel(CommandParams param)

@@ -61,7 +61,7 @@ namespace PTM.Engine
                         command = trimmedLine;
                     }
 
-                    Lines.Add(new ProgramLine(sourceLineNumber, actualLineNumber, command.ToUpper(), new CommandParams(param)));
+                    Lines.Add(new ProgramLine(sourceLineNumber, actualLineNumber, command.ToUpper(), new CommandParams(null, param)));
                     actualLineNumber++;
                 }
 
