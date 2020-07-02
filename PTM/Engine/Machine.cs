@@ -27,8 +27,7 @@ namespace PTM.Engine
         private int ProgramPtr = 0;
         private ObjectMap Map;
         private ObjectPosition TargetObject;
-        private string KeyDownHandlerLabel;
-        private string KeyUpHandlerLabel;
+        private readonly HashSet<string> KeysPressed = new HashSet<string>();
 
         public Machine(Program program)
         {
@@ -104,11 +103,13 @@ namespace PTM.Engine
             if (e.KeyCode == Keys.F12)
                 ShowDebugger(null);
 
+            KeysPressed.Add(e.KeyCode.ToString().ToUpper());
             return true;
         }
 
         public override bool OnKeyUp(KeyEventArgs e)
         {
+            KeysPressed.Remove(e.KeyCode.ToString().ToUpper());
             return true;
         }
         
@@ -411,20 +412,15 @@ namespace PTM.Engine
             Map.MoveObject(TargetObject, newPosition);
         }
 
-        public void SetKeyDownHandler(CommandParams param)
-        {
-            KeyDownHandlerLabel = param.GetString();
-        }
-
-        public void SetKeyUpHandler(CommandParams param)
-        {
-            KeyUpHandlerLabel = param.GetString();
-        }
-
-        public void CallSubroutineAtLabel(CommandParams param)
+        public void CallLabel(CommandParams param)
         {
             CallStack.Push(ProgramPtr);
             ProgramPtr = TryGetLabelLineNumber(param.GetString());
+        }
+
+        public void CallSubroutineAtLabel(string label)
+        {
+            CallLabel(new CommandParams(Vars, label));
         }
 
         public void ReturnFromSubroutine(CommandParams param)
@@ -435,6 +431,34 @@ namespace PTM.Engine
         public void GoToLabel(CommandParams param)
         {
             ProgramPtr = TryGetLabelLineNumber(param.GetString());
+        }
+
+        public void GoToLabel(string label)
+        {
+            GoToLabel(new CommandParams(Vars, label));
+        }
+
+        private bool IsKeyPressed(string key)
+        {
+            return KeysPressed.Contains(key.ToUpper());
+        }
+
+        public void IfKeyPressedCall(CommandParams param)
+        {
+            string key = param.GetString();
+            string label = param.GetString();
+
+            if (IsKeyPressed(key))
+                CallSubroutineAtLabel(label);
+        }
+
+        public void IfKeyPressedGoto(CommandParams param)
+        {
+            string key = param.GetString();
+            string label = param.GetString();
+
+            if (IsKeyPressed(key))
+                GoToLabel(label);
         }
     }
 }

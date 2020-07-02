@@ -29,7 +29,7 @@ namespace PTM.Engine
             Cmd["STK.STORE"] = Machine.StoreStackToVariable;
             Cmd["STK.LOAD"] = Machine.LoadVariableToStack;
             // Program branching
-            Cmd["CALL"] = Machine.CallSubroutineAtLabel;
+            Cmd["CALL"] = Machine.CallLabel;
             Cmd["RET"] = Machine.ReturnFromSubroutine;
             Cmd["GOTO"] = Machine.GoToLabel;
             // Variables
@@ -55,8 +55,8 @@ namespace PTM.Engine
             Cmd["OBJ.MOVE.DIST"] = Machine.MoveObjectByDistance;
             Cmd["OBJ.MOVE.TO"] = Machine.MoveObjectTo;
             // Keyboard
-            Cmd["KEY.DOWN.CALL"] = Machine.SetKeyDownHandler;
-            Cmd["KEY.UP.CALL"] = Machine.SetKeyUpHandler;
+            Cmd["IF.KEY.CALL"] = Machine.IfKeyPressedCall;
+            Cmd["IF.KEY.GOTO"] = Machine.IfKeyPressedGoto;
         }
 
         public ProgramLine CurrentLine { get; private set; }

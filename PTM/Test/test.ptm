@@ -4,20 +4,16 @@ WINDOW.INIT Hello World!,480,480,23,22
 start:
 	DEBUG.SHOW
 	DEBUG.PRINT Program start
-	VAR $test, 5
-	VAR $test2, $test
-	DEBUG.PRINT $test
-	DEBUG.PRINT $test2
 	
-	KEY.DOWN.CALL key_down
-
 	CALL setup_map
 	CALL put_test_objs
 	CALL animate_test_objs
-	CALL move_test_objs
 
 infinite_loop:
-	;DEBUG.CYCLE
+	IF.KEY.CALL right, key_right
+	IF.KEY.CALL left, key_left
+	IF.KEY.CALL up, key_up
+	IF.KEY.CALL down, key_down
 	GOTO infinite_loop
 
 end:
@@ -45,9 +41,19 @@ animate_test_objs:
 	OBJ.ANIM.SET 0, 1, 17, 37
 	RET
 
-move_test_objs:
-	OBJ.POS 0, 0, 4
-	OBJ.MOVE.DIST 0, 1, 1
-	OBJ.POS 0, 0, 10
-	OBJ.MOVE.TO 0, 10, 10
+key_right:
+	OBJ.FIND Test1
+	OBJ.MOVE.DIST 0, 1, 0
+	RET
+key_left:
+	OBJ.FIND Test1
+	OBJ.MOVE.DIST 0, -1, 0
+	RET
+key_up:
+	OBJ.FIND Test1
+	OBJ.MOVE.DIST 0, 0, -1
+	RET
+key_down:
+	OBJ.FIND Test1
+	OBJ.MOVE.DIST 0, 0, 1
 	RET
